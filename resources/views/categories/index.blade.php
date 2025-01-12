@@ -88,7 +88,7 @@
             if (successMessage) {
                 successMessage.style.display = 'none';
             }
-        }, 3000); // 5000 milliseconds = 5 seconds
+        }, 3000); // 3000 milliseconds = 3 seconds
     </script>
     
 @endsection

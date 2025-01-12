@@ -14,7 +14,8 @@ class ProductController extends Controller
     public function index()
     {
        // $products = Product::all();
-        $products = Product::with('subcategories')->get();
+        $products = Product::with('category')->get();
+       // dd($products);
         return view('products.index' , compact('products'));
     }
 
@@ -23,7 +24,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        return view('products.create');
     }
 
     /**
@@ -37,16 +38,27 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'category_id' => 'required|exists:categories,id',
         ]);
-    
-        $data = $request->all();
+        
+
+        // Handle the file upload
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products');
+            $image = $request->file('image');
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('product_img'), $imageName);
+
+            // Save category to database
+            Product::create([
+                'name' => $request->name,
+                'price' => $request->price,
+                'category_id' => $request->category_id,
+                'image' => 'product_img/' . $imageName
+            ]);
+
+            return redirect()->route('products.index')->with('success', 'Product created successfully.');
         }
-    
-        Product::create($data);
-    
-        return redirect()->route('products.index')->with('success', 'Product created successfully.');
-    
+
+        return back()->with('error', 'Failed to upload image.');
+
     }
 
     /**
@@ -62,7 +74,8 @@ class ProductController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $product = Product::find($id);
+        return view('products.edit' , compact('product'));
     }
 
     /**
@@ -76,19 +89,29 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'category_id' => 'required|exists:categories,id',
         ]);
-    
-        $data = $request->all();
+        
+        $product = Product::find($id);
+
+        // Handle the file upload
         if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image) {
-                Storage::delete($product->image);
+            // del old file
+            if (file_exists(public_path($product->image))) {
+                unlink(public_path($product->image));
             }
-            $data['image'] = $request->file('image')->store('products');
+            $image = $request->file('image');
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('product_img'), $imageName);
         }
-    
-        $product->update($data);
-    
-        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+
+        // Save product to database
+            
+        $product->name = $request->name;
+        $product->price = $request->price;
+        $product->category_id = $request->category_id;
+            
+        $product->save();
+        
+        return redirect()->route('products.index')->with('success', 'Product Updated successfully.');
     
     }
 
@@ -97,6 +120,14 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $product = Product::find($id);
+        if (file_exists(public_path($product ->image))) {
+            unlink(public_path($product ->image));
+        }
+
+        $product->delete();
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
+   
+
     }
 }

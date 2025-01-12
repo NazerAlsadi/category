@@ -93,7 +93,6 @@ class CategoryController extends Controller
 
             $image = $request->file('image');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
-           // dd($imageName);
             $image->move(public_path('images'), $imageName);
             $category->image = 'images/' . $imageName;
         }
